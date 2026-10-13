@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.png binary
+*.so binary
+# Preserve upstream license bytes and meaningful unified-diff context whitespace.
+licenses/* -text whitespace=-blank-at-eol,-blank-at-eof
+*.patch -text whitespace=-blank-at-eol,-blank-at-eof

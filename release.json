@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "release": "v0.1.0",
+  "repository": "ultrapravyj/unifi-riscv",
+  "platform": {
+    "os": "Debian 13 Trixie",
+    "architecture": "riscv64",
+    "endianness": "little",
+    "abi": "LP64D",
+    "isa_elf": "rv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0",
+    "isa_summary": "RV64GC + Zicsr/Zifencei; Zmmul/Zaamo/Zalrsc are the M/A component subextensions",
+    "glibc_min": "2.38",
+    "glibcxx_min": "3.4.32",
+    "cxxabi_min": "1.3.15"
+  },
+  "unifi": {
+    "version": "10.6.106",
+    "package_version": "10.6.106-36011-1",
+    "java_major": 25,
+    "url": "https://dl.ui.com/unifi/10.6.106/unifi_sysvinit_all.deb",
+    "sha256": "e93b70e73b9983c5e4d0a8ccc2d5d19b86db05e78f9a8c1850caf89ac069b240"
+  },
+  "mongodb": {
+    "version": "7.0.43",
+    "asset": "mongodb-7.0.43-debian13-riscv64.tar.gz",
+    "sha256": "dfb5da2624e5509c5d702143572efac3079063a52f8c1d0daf99d5039964bf30",
+    "binary_sha256": "9fee9b396526e10f2f889fb2f4bb762522be78cccc97b7379818deae026455dd",
+    "build_id": "ad9023cca36137ebe8a5513dbd442a28ca12523b",
+    "javascript_engine": "none",
+    "needed": [
+      "libcurl.so.4",
+      "libresolv.so.2",
+      "libcrypto.so.3",
+      "libssl.so.3",
+      "libstdc++.so.6",
+      "libm.so.6",
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-riscv64-lp64d.so.1"
+    ],
+    "symbol_versions": {
+      "GLIBC": "2.38",
+      "GLIBCXX": "3.4.32",
+      "CXXABI": "1.3.15",
+      "OPENSSL": "3.0.0",
+      "CURL_OPENSSL": "4"
+    },
+    "source_asset": "mongodb-7.0.43-riscv64-corresponding-source.tar.gz",
+    "source_commit": "75b4e8457392dfd3ee501669e8a1835f4c08b654"
+  },
+  "jni": {
+    "asset": "unifi-sdnotify-jni-debian13-riscv64-v0.1.0.tar.gz",
+    "sha256": "185b25fd3060c1d14b284ca2f9029032406f896ede9bce2582af973850eb5864",
+    "binary_sha256": "606e9b6223e1dcc1a260a56718234c29225455829cc47c9c6dfc6b94e6cb7f9a",
+    "build_id": "4d367ca6934b4c23fa0999dd42b02343740c12a9",
+    "needed": [
+      "libsystemd.so.0"
+    ],
+    "symbol_versions": {
+      "LIBSYSTEMD": "209"
+    }
+  }
+}

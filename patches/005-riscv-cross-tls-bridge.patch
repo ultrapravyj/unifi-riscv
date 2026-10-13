@@ -1,0 +1,53 @@
+--- a/src/mongo/db/SConscript
++++ b/src/mongo/db/SConscript
+@@ -2534,9 +2534,15 @@
+     env.Alias('generated-sources', generatedDbManifest)
+     env.Depends("mongod.res", generatedDbManifest)
+ 
+-env.Program(
++mongod_link_env = env.Clone()
++cross_tls_sources = []
++if env['TARGET_ARCH'] == 'riscv64':
++    mongod_link_env.Append(LINKFLAGS=['-Wl,--wrap=__emutls_get_address'])
++    tls_native_env = env.Clone(CXX='/usr/bin/g++', CC='/usr/bin/gcc')
++    cross_tls_sources = list(tls_native_env.Object('riscv_cross_tls_bridge.cpp'))
++mongod_link_env.Program(
+     target="mongod",
+-    source=['mongod.cpp'] + env.WindowsResourceFile("mongod.rc"),
++    source=['mongod.cpp'] + cross_tls_sources + env.WindowsResourceFile("mongod.rc"),
+     LIBDEPS=[
+         # NOTE: Do not add new libdeps (public or private) here unless
+         # required by the linker to satisfy symbol dependencies from
+--- /dev/null
++++ b/src/mongo/db/riscv_cross_tls_bridge.cpp
+@@ -0,0 +1,30 @@
++// Cross-build ABI adapter for GCC 14.2's portable TLS and Linux libstdc++.
++// All execution remains native RISC-V. Other TLS allocations use libgcc's implementation.
++#include <cstdint>
++#include <mutex>
++
++struct EmutlsControl {
++    std::uintptr_t size;
++    std::uintptr_t alignment;
++    std::uintptr_t offset;
++    void* initial_value;
++};
++
++extern "C" {
++EmutlsControl once_callable_control asm("__emutls_v._ZSt15__once_callable") = {
++    sizeof(void*), alignof(void*), 0, nullptr};
++EmutlsControl once_call_control asm("__emutls_v._ZSt11__once_call") = {
++    sizeof(void (*)()), alignof(void (*)()), 0, nullptr};
++
++void* __real___emutls_get_address(EmutlsControl*);
++
++void* __wrap___emutls_get_address(EmutlsControl* control) {
++    if (control == &once_callable_control) {
++        return &std::__once_callable;
++    }
++    if (control == &once_call_control) {
++        return &std::__once_call;
++    }
++    return __real___emutls_get_address(control);
++}
++}

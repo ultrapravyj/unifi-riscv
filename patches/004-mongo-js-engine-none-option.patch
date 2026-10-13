@@ -1,0 +1,11 @@
+--- a/SConstruct
++++ b/SConstruct
+@@ -1645,7 +1645,7 @@
+ 
+ noshell = has_option("noshell")
+ 
+-jsEngine = get_option("js-engine")
++jsEngine = None if get_option("js-engine") == "none" else get_option("js-engine")
+ 
+ serverJs = get_option("server-js") == "on"
+ 

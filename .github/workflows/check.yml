@@ -1,0 +1,21 @@
+name: Installer source checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  source-checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python compilation and integrity tests
+        run: |
+          python3 -m compileall -q runtime build tests
+          python3 -m unittest discover -s tests -v
+      - name: Shell syntax
+        run: bash -n install.sh runtime/run-unifi.sh build/rebuild-native.sh
+      - name: Ordinary install contains no compilation
+        run: |
+          ! grep -En '(^|[[:space:]])(gcc|g\+\+|scons|make|cmake|javac)([[:space:]]|$)' install.sh runtime/install.py runtime/run-unifi.sh
+          ! grep -En 'build-essential|libsystemd-dev|openjdk-25-jdk' runtime/install.py
