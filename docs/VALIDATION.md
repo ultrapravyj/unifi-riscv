@@ -85,9 +85,25 @@ were copied into public validation materials.
   with `--reinstall` and failure injection, not a future unseen UniFi release.
 - MongoDB server-side JavaScript remains disabled; UniFi OS ULP/SSL-inspection
   integrations remain outside this standalone installer.
-- Public GitHub Release download/publish verification is conditional on obtaining
-  GitHub CLI account authorization. The local exact prepared assets/private-mirror
-  download/checksum path was exercised before publication.
+- The full clean-OS installer lifecycle used the exact prepared native/runtime
+  assets through a private mirror. The subsequent public-download checks below
+  verify the published transport and checksum pins, without claiming another
+  bare-metal installation.
 
 The private integration logs, test root filesystems and backups remain on the
 test machine for investigation and are intentionally not Release assets.
+
+## 4. Public publication/download verification — 2026-10-13
+
+- Public repository: https://github.com/ultrapravyj/unifi-riscv
+- Published **Pre-release v0.1.0**, not a draft:
+  https://github.com/ultrapravyj/unifi-riscv/releases/tag/v0.1.0
+- All seven intended Release assets were uploaded, including corresponding source.
+- Downloaded published assets on the workstation and verified every SHA256 against
+  `SHA256SUMS` and the prepared local artifacts.
+- Downloaded the bootstrap/runtime/MongoDB/JNI from their public GitHub URLs on
+  the Orange Pi using **anonymous curl**, with no GitHub credentials, and verified
+  checksums plus the embedded bootstrap SHA256/runtime manifest consistency.
+- The actual repository field in the published bundle is `ultrapravyj/unifi-riscv`.
+- GitHub Actions source/integrity/shell checks passed for both main and the v0.1.0 tag.
+- The original production controller remained application-ready during these checks.

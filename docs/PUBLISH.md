@@ -37,7 +37,13 @@ It refuses to overwrite a pre-existing same-name unrelated repository or an
 existing v0.1.0 Release. Inspect errors and retry deliberately; it does not
 force-push, skip hooks or replace existing Release assets.
 
-The prepared pre-publication installer supports the exact local assets through
-`--artifact-base-url`; its default public URL remains UNPUBLISHED until the
-authenticated publisher assigns the real account. There is no claim that an
-unpublished GitHub repository/Release already exists.
+The v0.1.0 publication was completed under `ultrapravyj`:
+
+- Repository: https://github.com/ultrapravyj/unifi-riscv
+- Pre-release: https://github.com/ultrapravyj/unifi-riscv/releases/tag/v0.1.0
+
+All published asset checksums were checked; anonymous public downloads were
+verified from the Orange Pi. The local mirror option remains useful for isolated
+testing, but the default URLs now point to the real published Release.
+Running this v0.1.0 publisher again refuses to overwrite the existing Release;
+prepare a new version for subsequent component releases.
