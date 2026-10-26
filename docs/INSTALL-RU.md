@@ -1,7 +1,7 @@
 # Установка UniFi Network на riscv64
 
-**Неофициальный экспериментальный установщик.** `v0.1.0` — предварительный релиз
-установщика; в нём используются стабильные UniFi Network и MongoDB. Проект не
+**Неофициальный экспериментальный установщик.** `v0.2.0` добавляет нативный WebRTC
+для удалённого доступа; используются стабильные UniFi Network и MongoDB. Проект не
 поддерживается Ubiquiti или MongoDB как официальная сборка.
 
 ## Что поддерживается
@@ -28,13 +28,13 @@
 На поддерживаемой системе с `curl` и `sudo`:
 
 ```sh
-curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.1.0/install.sh | sudo bash
+curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.2.0/install.sh | sudo bash
 ```
 
 По желанию укажите адрес, который контроллер сообщает устройствам:
 
 ```sh
-curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.1.0/install.sh | sudo bash -s -- --host АДРЕС_КОНТРОЛЛЕРА
+curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.2.0/install.sh | sudo bash -s -- --host АДРЕС_КОНТРОЛЛЕРА
 ```
 
 Обычная установка **ничего нативного не компилирует**: готовые MongoDB и JNI
@@ -43,7 +43,7 @@ curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.1.0/i
 библиотеки ставятся из Debian.
 
 Проверенный набор: **UniFi 10.6.106 / build 36011**, **MongoDB 7.0.43**,
-**JNI v0.1.0**, **OpenJDK 25**. Конкретные обновления безопасности Java/библиотек
+**notify JNI v0.1.0**, **WebRTC JNI v0.2.0 / libdatachannel 0.23.2**, **OpenJDK 25**. Конкретные обновления безопасности Java/библиотек
 следуют репозиториям Debian; архивы приложения и компонентов зафиксированы хешами.
 
 ## Открыть контроллер
@@ -69,10 +69,18 @@ MongoDB слушает только `127.0.0.1:27017`, с индивидуаль
 базу и контроллер и сохраняет настройки, данные и учётные данные. Прерванная
 установка продолжается по сохранённому состоянию.
 
-Старая вручную собранная установка без `state.json` обнаруживается и остаётся
-без изменений. Автоматического преобразования старой структуры в `v0.1.0` нет:
-[инструкция по переносу](MIGRATION.md). Нельзя удалять настоящую базу или создавать
-фиктивный state-файл, чтобы обойти эту проверку.
+Для существующей установки проекта, включая старую структуру без `state.json`,
+доступно точечное восстановление облачного транспорта без замены базы и настроек:
+
+```sh
+curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.2.0/install.sh | sudo bash -s -- --repair-cloud
+sudo python3 /opt/unifi-riscv/scripts/cloud.py check
+sudo python3 /opt/unifi-riscv/scripts/cloud.py probe
+```
+
+После этого проверьте открытие панели и раздела Networks через **unifi.ui.com**.
+[Причина и проверка исправления](CLOUD-ACCESS.md), [совместимость старой структуры](MIGRATION.md).
+Создавать фиктивный state-файл или удалять рабочую базу не требуется.
 
 ## Обновление, резервная копия и возврат
 

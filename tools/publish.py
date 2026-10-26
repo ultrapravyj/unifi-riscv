@@ -19,7 +19,9 @@ def execute(args, check=True, capture=False, env=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input-dir', required=True)
+    parser.add_argument('--input-dir')
+    parser.add_argument('--cloud-input-dir')
+    parser.add_argument('--version', default=json.loads((ROOT / 'release.json').read_text())['release'])
     parser.add_argument('--gh', default='gh')
     parser.add_argument('--git', default='git')
     args = parser.parse_args()
@@ -44,7 +46,12 @@ def main():
             end = text.index('По желанию укажите адрес')
             text = text[:start] + text[end:]
         path.write_text(text, encoding='utf-8', newline='\n')
-    execute([sys.executable, str(ROOT / 'tools/package-release.py'), '--input-dir', args.input_dir, '--repository', repository])
+    if args.cloud_input_dir:
+        execute([sys.executable, str(ROOT / 'tools/package-release.py'), '--cloud-input-dir', args.cloud_input_dir, '--version', args.version, '--repository', repository])
+    elif args.input_dir:
+        execute([sys.executable, str(ROOT / 'tools/package-release.py'), '--input-dir', args.input_dir, '--repository', repository])
+    manifest = json.loads((ROOT / 'release.json').read_text())
+    version = manifest['release']
     execute([sys.executable, str(ROOT / 'tools/audit-public.py')])
     execute([args.git, 'status', '--short'])
     execute([args.git, 'diff', '--check'])
@@ -63,7 +70,7 @@ def main():
                         'GIT_COMMITTER_EMAIL': str(account['id']) + '+' + login + '@users.noreply.github.com'})
     changes = execute([args.git, 'diff', '--cached', '--quiet'], check=False)
     if changes.returncode == 1:
-        execute([args.git, 'commit', '-m', 'Add experimental binary-first UniFi installer for riscv64'], env=environment)
+        execute([args.git, 'commit', '-m', 'Restore native WebRTC remote access on riscv64' if 'webrtc' in manifest else 'Add experimental binary-first UniFi installer for riscv64'], env=environment)
     exists = execute([args.gh, 'repo', 'view', repository, '--json', 'name'], check=False, capture=True)
     if exists.returncode != 0:
         execute([args.gh, 'repo', 'create', repository, '--public', '--description',
@@ -76,28 +83,27 @@ def main():
             raise RuntimeError('Repository already exists but this checkout has no matching origin; inspect before publishing.')
     # gh's credential helper is passed per invocation, never persisted to git config.
     helper = '!"' + args.gh.replace('\\', '/') + '" auth git-credential'
-    execute([args.git, '-c', 'credential.https://github.com.helper=', '-c', 'credential.https://github.com.helper=' + helper, 'push', '-u', 'origin', 'main'], env=environment)
-    tag = execute([args.git, 'rev-parse', '--verify', 'refs/tags/v0.1.0'], check=False, capture=True)
+    execute([args.git, '-c', 'credential.https://github.com.helper=', '-c', 'credential.https://github.com.helper=' + helper, 'push', 'origin', 'main'], env=environment)
+    tag = execute([args.git, 'rev-parse', '--verify', 'refs/tags/' + version], check=False, capture=True)
     if tag.returncode != 0:
-        execute([args.git, 'tag', '-a', 'v0.1.0', '-m', 'Experimental riscv64 installer v0.1.0'], env=environment)
-    execute([args.git, '-c', 'credential.https://github.com.helper=', '-c', 'credential.https://github.com.helper=' + helper, 'push', 'origin', 'v0.1.0'], env=environment)
-    existing_release = execute([args.gh, 'release', 'view', 'v0.1.0', '--repo', repository], check=False, capture=True)
+        execute([args.git, 'tag', '-a', version, '-m', 'Native riscv64 installer ' + version], env=environment)
+    execute([args.git, '-c', 'credential.https://github.com.helper=', '-c', 'credential.https://github.com.helper=' + helper, 'push', 'origin', version], env=environment)
+    existing_release = execute([args.gh, 'release', 'view', version, '--repo', repository], check=False, capture=True)
     if existing_release.returncode == 0:
-        raise RuntimeError('Release v0.1.0 already exists; no assets were overwritten.')
-    names = ['BUILD-INFO.json', 'install.sh', 'SHA256SUMS',
-             'mongodb-7.0.43-debian13-riscv64.tar.gz',
-             'mongodb-7.0.43-riscv64-corresponding-source.tar.gz',
-             'unifi-riscv-installer-v0.1.0.tar.gz',
-             'unifi-sdnotify-jni-debian13-riscv64-v0.1.0.tar.gz']
+        raise RuntimeError('Release ' + version + ' already exists; no assets were overwritten.')
+    names = [line.split('  ', 1)[1] for line in (ROOT / '.release/SHA256SUMS').read_text().splitlines()] + ['SHA256SUMS']
+    if any('/' in name or '\\' in name for name in names):
+        raise RuntimeError('Unexpected release asset name')
     assets = [str(ROOT / '.release' / name) for name in names]
     if not all(Path(path).is_file() for path in assets):
         raise RuntimeError('A required release asset is missing')
-    execute([args.gh, 'release', 'create', 'v0.1.0', *assets, '--repo', repository,
-             '--prerelease', '--verify-tag', '--title', 'v0.1.0 — experimental native riscv64 installer',
+    prerelease = ['--prerelease'] if '-rc.' in version or version == 'v0.1.0' else []
+    execute([args.gh, 'release', 'create', version, *assets, '--repo', repository,
+             *prerelease, '--verify-tag', '--title', version + ' — native riscv64 cloud transport',
              '--notes-file', str(ROOT / 'docs/RELEASE-NOTES.md')])
     print('Repository: https://github.com/' + repository)
-    print('Pre-release: https://github.com/' + repository + '/releases/tag/v0.1.0')
-    print('Install: curl -fsSL https://github.com/' + repository + '/releases/download/v0.1.0/install.sh | sudo bash')
+    print('Release: https://github.com/' + repository + '/releases/tag/' + version)
+    print('Install: curl -fsSL https://github.com/' + repository + '/releases/download/' + version + '/install.sh | sudo bash')
 
 if __name__ == '__main__':
     main()

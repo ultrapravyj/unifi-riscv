@@ -20,8 +20,8 @@ DB_DATA = Path('/var/lib/unifi-mongodb')
 LOG = Path('/var/log/unifi')
 DB_LOG = Path('/var/log/unifi-mongodb')
 UNITS = ['unifi-riscv.service', 'mongod-riscv.service']
-RELEASE = 'v0.1.0'
 MANIFEST = json.loads((Path(__file__).parent.parent / 'release.json').read_text())
+RELEASE = MANIFEST['release']
 
 def run(args, **kwargs):
     return subprocess.run([str(a) for a in args], check=True, **kwargs)

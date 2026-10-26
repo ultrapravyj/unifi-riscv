@@ -11,5 +11,7 @@ __pycache__/
 *.deb
 *.tar.gz
 *.zip
+*.har
+*.unf
 data/
 backups/

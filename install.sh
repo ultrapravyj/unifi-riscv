@@ -3,9 +3,9 @@
 # Pinned bootstrap: runtime bundle and native assets are checksum-verified.
 set -euo pipefail
 REPOSITORY="ultrapravyj/unifi-riscv"
-RELEASE="v0.1.0"
-BUNDLE="unifi-riscv-installer-v0.1.0.tar.gz"
-BUNDLE_SHA256="4e1ccd0a9ee468cfcad0b847ebcde64d28b04db5c3c19c25256108a3fff96bbb"
+RELEASE="v0.2.0"
+BUNDLE="unifi-riscv-installer-v0.2.0.tar.gz"
+BUNDLE_SHA256="b198bdf06e07748e2f0a6b9b2f92a9631078300ed8392b5512044237b755668a"
 BASE="https://github.com/${REPOSITORY}/releases/download/${RELEASE}"
 
 if [ "$(id -u)" -ne 0 ]; then

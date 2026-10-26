@@ -19,7 +19,7 @@ from logging_config import configure
 
 DEPENDENCIES = ['ca-certificates', 'curl', 'python3', 'python3-pymongo', 'openjdk-25-jre-headless',
                 'libsnappy-java', 'libsnappy-jni', 'libsodium23', 'libjna-jni', 'libssl3t64',
-                'libcurl4t64', 'libstdc++6', 'libgcc-s1', 'libsystemd0', 'libc-bin', 'tar']
+                'libcurl4t64', 'libstdc++6', 'libgcc-s1', 'libsystemd0', 'libc-bin', 'tar', 'zlib1g', 'libzstd1']
 
 def account(name, home):
     try:
@@ -65,10 +65,12 @@ def mongo_users():
             if attempt == 59:
                 raise RuntimeError('Database startup failed; inspect database logs.') from None
             time.sleep(2)
-    roles = [{'role': 'dbOwner', 'db': name} for name in ['unifi', 'unifi_stat', 'unifi_audit', 'local']]
-    roles.append({'role': 'clusterMonitor', 'db': 'admin'})
+    from database_permissions import required_roles
+    roles = required_roles()
     if not admin.admin.command('usersInfo', credentials['user'])['users']:
         admin.admin.command('createUser', credentials['user'], pwd=credentials['password'], roles=roles)
+    from database_permissions import ensure_restore_permissions
+    ensure_restore_permissions()
     admin.close()
     return credentials
 
@@ -122,6 +124,7 @@ def main():
     parser.add_argument('--artifact-base-url', help='Release mirror URL; hashes remain pinned (also useful for isolated tests)')
     parser.add_argument('--host', help='Advertised IP/DNS; no network configuration changes')
     parser.add_argument('--check', action='store_true', help='Only compatibility checks; no changes')
+    parser.add_argument('--repair-cloud', action='store_true', help='Repair native remote transport in an existing project installation, including legacy layouts')
     args = parser.parse_args()
     common.preflight()
     if args.check:
@@ -131,6 +134,10 @@ def main():
     import fcntl
     lock = open('/run/lock/unifi-riscv-install.lock', 'w')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    if args.repair_cloud:
+        from cloud import repair
+        repair(args.artifact_base_url)
+        return
     state_path = ROOT / 'state.json'
     if state_path.exists():
         state = json.loads(state_path.read_text())
@@ -139,6 +146,8 @@ def main():
         if args.host and args.host != state['host']:
             raise RuntimeError('Repeated install cannot change existing advertised host')
         if state['phase'] == 'ready':
+            from cloud import repair, check
+            repair(args.artifact_base_url)
             run(['systemctl', 'start', 'mongod-riscv'])
             common.database()
             run(['systemctl', 'start', 'unifi-riscv'])
@@ -146,6 +155,8 @@ def main():
             print('Existing installation verified; data, settings and credentials preserved.')
             print('UniFi ' + version + ': https://' + state['host'] + ':8443/')
             print('Logs: /var/log/unifi/ and /var/log/unifi-mongodb/')
+            if not check():
+                print('Cloud diagnostics need review; verify Remote Management in your browser.')
             return
     else:
         if DATA.exists() or DB_DATA.exists() or (CONFIG / 'mongo-credentials.json').exists() or (ROOT / 'app/current').exists():
@@ -201,7 +212,7 @@ def main():
     for path in [DB_DATA, DB_LOG]:
         owned_directory(path, 'unifi-mongo')
     source = Path(__file__).parent.parent
-    for filename in ['common.py', 'install.py', 'manage.py', 'logging_config.py']:
+    for filename in ['common.py', 'install.py', 'manage.py', 'logging_config.py', 'cloud.py', 'database_permissions.py', 'migration_compat.py', 'legacy_update_hook.py']:
         shutil.copy2(source / 'runtime' / filename, ROOT / 'scripts' / filename)
     shutil.copy2(source / 'release.json', ROOT / 'release.json')
     shutil.copy2(source / 'runtime/run-unifi.sh', ROOT / 'scripts/run-unifi.sh')
@@ -213,6 +224,9 @@ def main():
     run(['systemctl', 'start', 'mongod-riscv'])
     credentials = mongo_users()
     application = app(package, state['unifi_version'], jni)
+    from cloud import deploy, probe, check
+    deploy(application, base)
+    print(probe(application))
     if not (DATA / 'system.properties').exists():
         uri = 'mongodb://' + quote(credentials['user'], safe='') + ':' + quote(credentials['password'], safe='') + '@127.0.0.1:27017/'
         properties = ['db.mongo.local=false', 'unifi.db.name=unifi', 'system_ip=' + state['host'],
@@ -235,6 +249,8 @@ def main():
     print('Open https://' + state['host'] + ':8443/ (initial self-signed certificate).')
     print('Logs: /var/log/unifi/ and /var/log/unifi-mongodb/')
     print('Manage: sudo python3 /opt/unifi-riscv/scripts/manage.py status|backup|update|rollback')
+    if not check():
+        print('Cloud diagnostics need review; registration and remote pages require browser verification.')
 
 if __name__ == '__main__':
     try:

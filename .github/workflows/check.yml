@@ -14,7 +14,7 @@ jobs:
           python3 -m compileall -q runtime build tests
           python3 -m unittest discover -s tests -v
       - name: Shell syntax
-        run: bash -n install.sh runtime/run-unifi.sh build/rebuild-native.sh
+        run: bash -n install.sh runtime/run-unifi.sh build/rebuild-native.sh build/build-webrtc.sh
       - name: Ordinary install contains no compilation
         run: |
           ! grep -En '(^|[[:space:]])(gcc|g\+\+|scons|make|cmake|javac)([[:space:]]|$)' install.sh runtime/install.py runtime/run-unifi.sh

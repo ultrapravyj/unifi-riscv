@@ -1,8 +1,8 @@
 # unifi-riscv
 
 **Unofficial experimental binary-first UniFi Network installer for native riscv64.**
-Release `v0.1.0` is a **pre-release of this installer**, using stable UniFi and
-MongoDB versions. It is not an official Ubiquiti or MongoDB distribution.
+Release `v0.2.0` adds native WebRTC remote access through UniFi Site Manager,
+using stable UniFi and MongoDB versions. It is not an official Ubiquiti or MongoDB distribution.
 
 [Русская инструкция](docs/INSTALL-RU.md) · [Binary compatibility](docs/COMPATIBILITY.md)
 · [Build from source](docs/BUILD.md) · [Redistribution/source](THIRD-PARTY.md)
@@ -12,7 +12,7 @@ MongoDB versions. It is not an official Ubiquiti or MongoDB distribution.
 On an Internet-connected supported machine with `curl` and `sudo`:
 
 ```sh
-curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.1.0/install.sh | sudo bash
+curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.2.0/install.sh | sudo bash
 ```
 
 The bootstrap is version-pinned. It verifies the installer bundle's SHA256;
@@ -23,7 +23,7 @@ verified. **No MongoDB, JNI or Java compilation occurs during installation.**
 Optional advertised IP/DNS (this does not configure host networking):
 
 ```sh
-curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.1.0/install.sh | sudo bash -s -- --host CONTROLLER_IP
+curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.2.0/install.sh | sudo bash -s -- --host CONTROLLER_IP
 ```
 
 The script reports the final URL, normally `https://CONTROLLER_IP:8443/`.
@@ -56,6 +56,7 @@ not supported by this release. See [actual ELF properties](docs/COMPATIBILITY.md
 | UniFi Network | **10.6.106**, official package **10.6.106-36011-1** |
 | MongoDB | **7.0.43**, modified native RISC-V build |
 | Notify JNI | Project **v0.1.0**, native riscv64 |
+| Remote transport | Project **v0.2.0** JNI adapter + **libdatachannel 0.23.2**, native riscv64 |
 | Java | Debian native OpenJDK **25**; original deployment tested **25.0.4.1** |
 
 Java/platform libraries follow Debian repository security updates; their exact
@@ -83,12 +84,33 @@ or application connection logs.
 
 Repeating the **same installer on an installation it manages** checks the
 existing services/database/application and preserves data, settings and credentials.
-Interrupted installation resumes using its saved state. An unknown or older
-hand-built installation is detected and left unchanged; see [migration](docs/MIGRATION.md).
+Interrupted installation resumes using its saved state. An older hand-built
+project installation can receive the targeted repair below; see [migration](docs/MIGRATION.md).
 The installer does not silently reset a database, reuse default passwords, or
 adopt an unrelated installation.
 
 ## Status, backup, update and rollback
+
+### Upgrade/repair an existing project installation
+
+This supports both v0.1.0 installations and the original `/opt/unifi-riscv/`
+layout, without replacing MongoDB or creating a new controller:
+
+```sh
+curl -fsSL https://github.com/ultrapravyj/unifi-riscv/releases/download/v0.2.0/install.sh | sudo bash -s -- --repair-cloud
+sudo python3 /opt/unifi-riscv/scripts/cloud.py check
+```
+
+The repair verifies pinned native assets, preserves existing application/database
+data and registration, backs up replaced native libraries, and rolls those libraries
+back if activation fails. Repeating it is idempotent. A local `/status` success
+does not establish remote access: verify the dashboard and Settings → Networks
+at **https://unifi.ui.com**. [Root cause and cloud validation](docs/CLOUD-ACCESS.md).
+The repair also corrects scoped restore-database/fsync privileges, automatic
+restart after a restore, remote `.unf` MIME handling, and the specific 9.0.120
+migration-metadata omission. [Backup and restore](docs/BACKUP-RESTORE.md).
+
+### Managed installation lifecycle
 
 ```sh
 sudo python3 /opt/unifi-riscv/scripts/manage.py status
@@ -102,7 +124,8 @@ its published checksum and Java/MongoDB/JNI requirements. It downloads/stages th
 application before downtime, stops both services, takes a checksum-protected cold
 backup, switches the application link, and waits for authenticated database and
 application readiness. It restores the previous application and private runtime
-state automatically if activation fails. It reuses the ready-made notify binary;
+state automatically if activation fails. It validates the notify/WebRTC JNI ABI
+and runs a real ICE/DTLS/SCTP probe against the staged application. It reuses the ready-made native binaries;
 normal updates do not compile native components or rebuild the machine.
 
 To select an official stable version or repeat the update transaction for testing:
@@ -129,15 +152,22 @@ journalctl -u unifi-riscv -u mongod-riscv --no-pager
 curl -kfsS https://127.0.0.1:8443/status
 ss -lntup
 free -h
+sudo python3 /opt/unifi-riscv/scripts/cloud.py check
+sudo python3 /opt/unifi-riscv/scripts/cloud.py probe
 ```
 
 Readiness means `/status` reports `meta.up=true` for the expected version, not
 merely that Java started. UniFi uses native systemd `READY=1`; startup waits for
 authenticated MongoDB. An explicit MongoDB restart restarts UniFi through `PartOf=`.
+`Restart=always` additionally recovers the clean JVM exit used by restoration.
 
 Core listeners: TCP **8443** (management), **8080** (inform); UDP **3478** (STUN),
 **10001** (discovery). Other observed listeners: TCP 8880, 8843, 6789, 28082 and
 UDP 5514. The installer does not enable a host firewall or expose MongoDB remotely.
+Remote Management additionally needs outbound TCP **443/8883**, working DNS/time,
+and UDP connectivity to the actual STUN/TURN/session endpoints. The native adapter
+uses kernel routing for ICE sockets, so a separate Ethernet management address
+does not force Internet traffic away from Wi-Fi. Host network profiles are preserved.
 
 ## What is tested
 
@@ -164,11 +194,15 @@ the new installation code.
   not a controller restart loop.
 - The original executable used a cross-build TLS compatibility bridge. All
   runtime code remains native RISC-V; build provenance/patches are published.
+- The WebRTC adapter uses libjuice's **UDP ICE/STUN/TURN** transport. TCP-only or
+  TLS-only TURN networks are not validated/supported by this adapter. DTLS peer
+  fingerprints remain verified; the regression probe also tests rejection of a
+  deliberately altered fingerprint.
 
 ## Release contents and source
 
 Release assets: `install.sh`, the installer bundle, ready MongoDB archive, ready
-notify JNI archive, corresponding MongoDB source archive, `BUILD-INFO.json`,
+notify JNI archive, native WebRTC archive, corresponding MongoDB and WebRTC source archives, `BUILD-INFO.json`,
 and `SHA256SUMS`. UniFi, Java and Debian shared libraries are not rehosted.
 Redistribution/license details are in [THIRD-PARTY.md](THIRD-PARTY.md).
 

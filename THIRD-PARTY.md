@@ -48,6 +48,22 @@ The RISC-V cross compiler is an unmodified general-purpose GCC toolchain with
 its own license/runtime exception; it is a build prerequisite, not a shipped
 runtime component. See the exact artifact dependency and ISA manifest.
 
+## Native WebRTC transport
+
+`native/webrtc_jni.cpp` and `tests/NativeWebRTCProbe.java` are independently
+written MIT-licensed interoperability code. They use the actual vendor Java
+method declarations without copying Ubiquiti's native implementation.
+
+The native WebRTC archive includes libdatachannel **0.23.2** (MPL-2.0), with
+libjuice (MPL-2.0), usrsctp (BSD-3-Clause) and plog (MIT) statically incorporated
+into that shared library. The adapter also incorporates **nlohmann/json (MIT)**
+for bounded backup-envelope parsing. Their notices accompany the binary. The same Release
+provides a separate **WebRTC corresponding-source archive** containing each
+exact upstream source revision, complete notices, adapter/probe source and the
+build script. These components are not relicensed by the project's MIT license.
+System OpenSSL, zlib, zstd, libc and C++ runtime libraries are dynamically linked
+and installed from Debian rather than redistributed in the WebRTC archive.
+
 ## Public material boundaries
 
 Release assets contain executables, corresponding source, notices and build

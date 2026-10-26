@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "release": "v0.1.0",
+  "release": "v0.2.0",
   "repository": "ultrapravyj/unifi-riscv",
   "platform": {
     "os": "Debian 13 Trixie",
@@ -18,7 +18,11 @@
     "package_version": "10.6.106-36011-1",
     "java_major": 25,
     "url": "https://dl.ui.com/unifi/10.6.106/unifi_sysvinit_all.deb",
-    "sha256": "e93b70e73b9983c5e4d0a8ccc2d5d19b86db05e78f9a8c1850caf89ac069b240"
+    "sha256": "e93b70e73b9983c5e4d0a8ccc2d5d19b86db05e78f9a8c1850caf89ac069b240",
+    "ace_jar_sha256": "c35e782ba8b32c451e64357a1b3589adda6edba4e24585e533b8c755346f5fdc",
+    "migration_metadata_extension": [
+      "9.0.120"
+    ]
   },
   "mongodb": {
     "version": "7.0.43",
@@ -59,5 +63,33 @@
     "symbol_versions": {
       "LIBSYSTEMD": "209"
     }
+  },
+  "webrtc": {
+    "asset": "unifi-webrtc-debian13-riscv64-v0.2.0.tar.gz",
+    "sha256": "4a103e7623b47f7749c2dc85f493395117969e46b27fde593e133897087ccdb4",
+    "files": {
+      "libubnt_webrtc_jni.so": "ccd17fbf8d864793bd0b503a60565cdfa8d0b59eccffc733e3832267fb6dee42",
+      "libdatachannel.so.0.23": "479fba5a71cd2031aea2a40c7559da7f154efc1c6f3911bccf5ecc3f4847040f",
+      "NativeWebRTCProbe.class": "28b8fa2cc873a641a056598d0d73537e02bcc4c927179e4e309f6e315089595e"
+    },
+    "libdatachannel_version": "0.23.2",
+    "source_commits": {
+      "libdatachannel": "9e6a13abbb6846c003d817d0387b6706466e2b03",
+      "libjuice": "b509b6c1f90e4a1d4753e6bde62ffbeb4d10c6bb",
+      "plog": "94899e0b926ac1b0f4750bfbd495167b4a6ae9ef",
+      "usrsctp": "fec583d54493f879d2ae44a743423bf8a04371ab",
+      "json": "55f93686c01528224f448c19128836e7df245f72"
+    },
+    "validated_unifi": "10.6.106",
+    "source_asset": "unifi-webrtc-corresponding-source-v0.2.0.tar.gz",
+    "https_endpoints": [
+      "sso.ui.com",
+      "unifi.ui.com",
+      "account.ui.com"
+    ],
+    "mqtt_endpoint": "a1ewuiz2p7wdvw-ats.iot.us-west-2.amazonaws.com",
+    "stun_endpoint": "stun:stun.cloudflare.com:3478",
+    "turn_endpoint": "turn:turn.cloudflare.com:3478",
+    "source_sha256": "707d72418582e4bc074255c00d22465673d04dce58e843bdb5b0481c6d0c3ef6"
   }
 }

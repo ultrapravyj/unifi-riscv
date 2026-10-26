@@ -80,3 +80,33 @@ source/link composition without needing the original private build directory.
 Builds are not promised byte-for-byte identical across paths/toolchain revisions.
 After rebuilding, regenerate checksums/ISA/dependency records, run installation
 and lifecycle tests, and distribute the corresponding source with the new binary.
+# Native remote transport (v0.2.0)
+
+Build on the native Debian 13 riscv64 board with `git`, `g++`, `cmake`,
+`ninja-build`, `libssl-dev`, and `openjdk-25-jdk-headless` installed:
+
+```sh
+bash build/build-webrtc.sh /opt/unifi-riscv/build/cloud-native /opt/unifi-riscv/app/current
+```
+
+Default parallelism is one job for the 2 GiB board. The script checks out the
+exact libdatachannel revision from `release.json` and its pinned submodules,
+builds only the remote transport, compiles the adapter/probe, and runs positive
+bidirectional ICE/DTLS/SCTP and negative certificate-fingerprint tests against
+the real installed vendor Java class. It exports binaries, licenses and complete
+upstream source archives into `output/`. No MongoDB rebuild is involved.
+
+Prepare a new pinned installer using existing verified MongoDB/notify artifacts
+in `.release/` and that public build output:
+
+```sh
+python3 tools/package-release.py --repository ultrapravyj/unifi-riscv \
+  --cloud-input-dir /path/to/output --version v0.2.0
+python3 tools/audit-public.py
+```
+
+The packager uses deterministic archive ordering, permissions and timestamps.
+Record toolchain versions and runtime validation separately; a source build
+requires a JDK, while an ordinary install/repair needs only the JRE and published
+native/probe binaries. Future JNI changes fail validation rather than silently
+disabling remote access.

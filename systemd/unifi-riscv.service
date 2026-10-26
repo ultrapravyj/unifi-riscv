@@ -1,7 +1,8 @@
 [Unit]
 Description=Experimental UniFi Network Server on native riscv64
 Wants=mongod-riscv.service
-After=network.target mongod-riscv.service
+After=network-online.target mongod-riscv.service
+Wants=network-online.target
 PartOf=mongod-riscv.service
 StartLimitIntervalSec=900
 StartLimitBurst=5
@@ -16,7 +17,7 @@ RuntimeDirectory=unifi
 RuntimeDirectoryMode=0750
 ExecStartPre=+/usr/bin/python3 /opt/unifi-riscv/scripts/manage.py database-ready
 ExecStart=/opt/unifi-riscv/scripts/run-unifi.sh
-Restart=on-failure
+Restart=always
 RestartSec=15
 TimeoutStartSec=600
 TimeoutStopSec=120

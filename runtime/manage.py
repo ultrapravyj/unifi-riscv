@@ -36,6 +36,8 @@ def update(version=None, reinstall=False, readiness=common.health):
     if release['version_major'] < 10:
         raise RuntimeError('UniFi Network 10 or newer is required')
     if version == state['unifi_version'] and not reinstall:
+        from cloud import repair
+        repair()
         common.database()
         common.health(version=version)
         print('Already at official stable UniFi ' + version)
@@ -63,6 +65,9 @@ def update(version=None, reinstall=False, readiness=common.health):
         native_directory.mkdir(parents=True, exist_ok=True)
         native_directory.chmod(0o755)
         shutil.copy2(jni, native_directory / jni.name)
+        from cloud import deploy, probe
+        deploy(destination)
+        probe(destination)
         backup = common.cold_backup()
         common.atomic_json(ROOT / 'backups/latest.json', {'archive': str(backup)})
         try:
@@ -82,12 +87,12 @@ def update(version=None, reinstall=False, readiness=common.health):
     finally:
         shutil.rmtree(temporary, ignore_errors=True)
 
-def validate_jni(application):
+def validate_native(application, class_name, expected):
     """Check the actual native declaration in Ubiquiti's class, not only text matches."""
     import struct
     import zipfile
     with zipfile.ZipFile(Path(application) / 'lib/internal/internal-dependencies.jar') as archive:
-        data = archive.read('com/ubnt/sdnotify/SDNotify.class')
+        data = archive.read(class_name + '.class')
     cursor = 8
     count = struct.unpack_from('>H', data, cursor)[0]
     cursor += 2
@@ -128,8 +133,13 @@ def validate_jni(application):
             for _ in range(attributes):
                 size = struct.unpack_from('>I', data, cursor + 2)[0]
                 cursor += 6 + size
-    if native != [('sdnotifyjni', '(ILjava/lang/String;)I')]:
-        raise RuntimeError('The next release changed notify JNI ABI; review native support before updating')
+    if sorted(native) != sorted(expected):
+        raise RuntimeError('Vendor JNI ABI changed for ' + class_name + '; review native support before updating')
+
+def validate_jni(application):
+    validate_native(application, 'com/ubnt/sdnotify/SDNotify', [('sdnotifyjni', '(ILjava/lang/String;)I')])
+    from cloud import WEBRTC_ABI
+    validate_native(application, 'com/ubnt/webrtc/WebRTCManager', WEBRTC_ABI)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

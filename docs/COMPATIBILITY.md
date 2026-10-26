@@ -1,4 +1,17 @@
-# Native binary compatibility — v0.1.0
+# Native binary compatibility
+
+## WebRTC transport — v0.2.0
+
+Both `libubnt_webrtc_jni.so` and `libdatachannel.so.0.23` are native ELF64
+little-endian **RISC-V / LP64D** libraries built on the same Debian 13 board.
+They are deployed together in `lib/native/Linux/riscv64/`; the adapter uses an
+`$ORIGIN` runtime search path for its pinned companion library. Dynamic platform
+dependencies include OpenSSL 3, libc/libstdc++/libgcc, libm, zlib and zstd.
+Ordinary installation does not compile C++ or Java. The shipped probe class was
+compiled with the tested native Java 25 JDK and executes against the actual
+official UniFi Java classes. See [cloud transport validation](CLOUD-ACCESS.md).
+
+## MongoDB and notify JNI — preserved v0.1.0 artifacts
 
 This table is derived from `file`, `readelf -A/-l/-d/--version-info` on the actual
 published executables, not only the board model or the architecture of the Java package.

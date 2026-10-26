@@ -1,4 +1,78 @@
-# Validation record — v0.1.0
+# Validation record
+
+## v0.2.0 cloud transport and restore — 2026-10-22 through 2026-10-25
+
+Verified on the existing real Orange Pi RV2 controller, using unmodified official
+UniFi **10.6.106-36011-1**, native OpenJDK **25.0.4.1+1-1-deb13u1-Debian**, native
+MongoDB **7.0.43**, kernel **6.18.55-current-spacemit** and Debian **13.7** /
+Armbian Community **26.11.0-trunk.83**.
+
+- Reproduced successful direct login and Site Manager Online → Connection Timeout
+  with user assistance; distinguished this from local authentication failure.
+- Compared every original vendor application file with the exact same official
+  package: no removals/changes. WebRTC JNI was absent for riscv64 in both, while
+  x86-64/ARM64 vendor WebRTC libraries were present. The startup warning and
+  actual Java native-availability early return established the transport gap.
+- Wi-Fi default route, synchronized time, validated HTTPS and registered-client
+  mutual TLS on the actual AWS IoT port **8883** passed.
+- Compiled both missing-transport libraries natively with **GCC 14.2.0-19**,
+  **CMake 3.31.6-2** and **Ninja 1.12.1-1**, using pinned upstream source revisions.
+- Executed the real vendor-class JNI probe: SDP, ICE, DTLS, SCTP and bidirectional
+  binary transfer passed. Deliberately altered certificate fingerprint was rejected.
+- Deployed the native component and restarted UniFi; the JVM mapped both native
+  libraries, and local application readiness returned without a database replacement.
+- The user confirmed that **Site Manager's dashboard and Settings → Networks
+  loaded**, and direct local login remained functional. Correlated native events
+  showed actual Cloudflare STUN/TURN endpoints, `relay=yes`, and connected transports.
+- Ran the packaged legacy repair and repeated it idempotently. Its cloud check
+  verified native hashes/loading, database ping, registration presence, HTTPS,
+  mutual TLS, correct Wi-Fi source routing, and a valid Cloudflare STUN response.
+- A private cold backup and configuration/database-count baseline were taken before
+  deployment. No account keys, tokens, databases or private logs are release assets.
+
+Additional completed checks:
+
+- Fresh native Debian 13/systemd installation on the same board in a separate
+  root filesystem and network namespace; repeated install, repair, same-version
+  application update and native-library loading in the new application directory.
+  No compiler/JDK was installed in that ordinary-install guest.
+- Physical full-board reboot, changed boot ID, Wi-Fi SSH reconnection, enabled
+  services active with zero automatic restarts, native library hashes/loading,
+  registered-client TLS, STUN, routing and database readiness after boot.
+- The user explicitly confirmed dashboard/Networks access from an **external
+  network** after reboot, with local login intact and continued navigation.
+- Eleven integrity/metadata/updater-boundary tests passed. Native probes verified real
+  transport, altered-fingerprint rejection, backup MIME fallback/body/auth-field
+  preservation, and byte-identical non-upload passthrough.
+- A local HAR isolated missing `unifi_restore` permissions and clean-exit restart
+  behavior. A same-version restore completed after those corrections.
+- A real 9.0.120 backup first reproduced the official metadata-list rejection.
+  The actual source version was then admitted in an isolated, non-Internet-routed
+  fixture with no Java/authentication-class changes or backup version rewriting.
+  After the minimal fsync grant, a fresh repeat completed real migrations with
+  **zero** import/migration errors and 9 networks, 2 WLANs, 3 device records.
+- The user confirmed the 9.0.120 restore on the real RV2 **through Site Manager**;
+  actual database counts and the completed migration matched the isolated result,
+  and the controller automatically returned after its clean restore exit.
+- The final installer was also tested with fresh application/database state in
+  the retained isolated Debian OS. Fresh privilege creation, migration metadata,
+  native transport, JRE-only deployment and a repeated/idempotent install passed.
+  The repeat test caught and corrected the need for explicit `showPrivileges`
+  when validating the existing custom MongoDB role.
+- The recognized legacy updater also receives a backed-up, idempotent staging
+  hook that deploys/probes cloud support before downtime; unknown custom updater
+  layouts are not overwritten.
+- A second full physical reboot with the final component and restored data
+  retained all 9 networks, 2 WLANs and 3 device records. Both enabled services
+  became active with zero restart counters; Wi-Fi cloud routing, verified cloud
+  TLS, STUN and authenticated Ethernet SSH passed. The user again confirmed
+  working remote dashboard/Networks/Wi-Fi navigation from an **external network**.
+
+Browser results are user-assisted; technical socket checks do not substitute
+for loading actual remote pages. Physical adoption of the restored device records
+has not been verified. Private HARs, fixtures and backup data are not public assets.
+
+## Historical v0.1.0 validation
 
 ## 1. Original real-device deployment
 
